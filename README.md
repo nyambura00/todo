@@ -31,6 +31,9 @@ Available commands:
     - add [TASK/s]
         adds new task/s
         Example: todo add "buy carrots"
+    - edit [INDEX]
+        edits an existing task(Eg on task 2. "Complete Rust")
+        Example: todo edit 2 "Complete Rust Book"
     - list
         lists all tasks
         Example: todo list

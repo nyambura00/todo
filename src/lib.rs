@@ -2,7 +2,7 @@ use colored::*;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::prelude::Read;
-use std::io::{BufReader, BufWriter, Write};
+use std::io::{BufReader, BufWriter, Write, BufRead, Seek, SeekFrom};
 use std::path::Path;
 use std::{env, process};
 
@@ -271,6 +271,55 @@ impl Todo {
                         .write_all(line.as_bytes())
                         .expect("unable to write data");
                 }
+            }
+        }
+    }
+
+    pub fn edit(&self, args: &[String]) {
+        if args.len() < 2 {
+            eprintln!("todo edit takes 2 args - [task index, formatted todo string]");
+            process::exit(1);
+        }
+
+        // Opens the TODO file with a permission to overwrite it
+        let todofile = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&self.todo_path)
+            .expect("Couldn't open the todofile");
+        
+        let mut buffer = String::new();
+        let mut reader = BufReader::new(todofile.try_clone().unwrap());
+        
+        let line_to_change_index = args[0].to_string().parse::<usize>().unwrap();
+
+        for (index, line) in reader.lines().enumerate() {
+            if args.contains(&"edit".to_string()) {
+                continue;
+            }
+            if args.contains(&(index + 1).to_string()) {
+                continue;
+            }
+
+            if index == line_to_change_index {
+                reader.seek(SeekFrom::Start(index as u64));
+                // Read the line into a buffer
+                reader.read_line(&mut buffer).unwrap();
+
+                let updated_todo = args[1].as_str();
+
+                // Edit the line in the buffer
+                buffer = buffer.replace(&line, updated_todo);
+
+                let mut writer = BufWriter::new(&todofile);
+                // Seek back to the beginning of the line
+                writer.seek(SeekFrom::Start(index as u64)).unwrap();
+                
+                // Write the edited line to the file
+                writer.write(buffer.as_bytes()).unwrap();
+
+                // Flush the changes to disk
+                writer.flush().unwrap(); 
             }
         }
     }
