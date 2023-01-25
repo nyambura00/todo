@@ -288,39 +288,25 @@ impl Todo {
             .open(&self.todo_path)
             .expect("Couldn't open the todofile");
         
-        let mut buffer = String::new();
-        let mut reader = BufReader::new(todofile.try_clone().unwrap());
-        
-        let line_to_change_index = args[0].to_string().parse::<usize>().unwrap();
+        let mut reader = BufReader::new(&todofile);
 
-        for (index, line) in reader.lines().enumerate() {
-            if args.contains(&"edit".to_string()) {
-                continue;
-            }
-            if args.contains(&(index + 1).to_string()) {
-                continue;
-            }
+        // a vec to hold the string todos
+        let mut buffer: Vec<String> = vec![];
 
-            if index == line_to_change_index {
-                reader.seek(SeekFrom::Start(index as u64));
-                // Read the line into a buffer
-                reader.read_line(&mut buffer).unwrap();
+        let index_to_update = args[0].to_string().parse::<u64>().unwrap();
 
-                let updated_todo = args[1].as_str();
+        let formatted_todo = args[1].to_string().parse::<String>().unwrap();
 
-                // Edit the line in the buffer
-                buffer = buffer.replace(&line, updated_todo);
+        // spot the relative index
+        reader.seek(SeekFrom::Start(index_to_update)).unwrap();
 
-                let mut writer = BufWriter::new(&todofile);
-                // Seek back to the beginning of the line
-                writer.seek(SeekFrom::Start(index as u64)).unwrap();
-                
-                // Write the edited line to the file
-                writer.write(buffer.as_bytes()).unwrap();
+        for line in reader.lines() {
+            buffer.push(line.unwrap());// push old todo(s) in the buffer
 
-                // Flush the changes to disk
-                writer.flush().unwrap(); 
-            }
+            // update content
+            let mut writer = BufWriter::new(&todofile);
+            writeln!(&mut writer, "{}", formatted_todo).expect("Failed to buffer write.");
+            writer.flush().expect("Error updating todo");
         }
     }
 }
