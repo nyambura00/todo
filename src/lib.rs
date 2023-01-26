@@ -2,7 +2,7 @@ use colored::*;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::prelude::Read;
-use std::io::{BufReader, BufWriter, Write, BufRead, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Write, BufRead};
 use std::path::Path;
 use std::{env, process};
 
@@ -282,32 +282,43 @@ impl Todo {
         }
 
         // Opens the TODO file with a permission to overwrite it
-        let todofile = OpenOptions::new()
+        let mut todofile = OpenOptions::new()
             .read(true)
             .write(true)
             .open(&self.todo_path)
             .expect("Couldn't open the todofile");
         
-        let mut reader = BufReader::new(&todofile);
+        let buf_reader = BufReader::new(&todofile);
 
         // a vec to hold the string todos
-        let mut buffer: Vec<String> = vec![];
+        let mut buf_writer = BufWriter::new(Vec::new());
 
+        // the respective args
         let index_to_update = args[0].to_string().parse::<u64>().unwrap();
-
         let formatted_todo = args[1].to_string().parse::<String>().unwrap();
 
-        // spot the relative index
-        reader.seek(SeekFrom::Start(index_to_update)).unwrap();
+        // a line to iterate over
+        let mut current_line = 0;
 
-        for line in reader.lines() {
-            buffer.push(line.unwrap());// push old todo(s) in the buffer
+        for line in buf_reader.lines() {
 
-            // update content
-            let mut writer = BufWriter::new(&todofile);
-            writeln!(&mut writer, "{}", formatted_todo).expect("Failed to buffer write.");
-            writer.flush().expect("Error updating todo");
+            if current_line == index_to_update {
+                buf_writer.write(formatted_todo.as_bytes()).expect("Failed to write to buffer");
+                buf_writer.write(b"\n").expect("Failed to write to buffer");
+            } else {
+                buf_writer.write(line.expect("Failed to write to buffer").as_bytes()).expect("Failed to write to buffer");
+                buf_writer.write(b"\n").expect("Failed to write to buffer");
+            }
+
+            current_line += 1;
+
         }
+
+        let buffer = buf_writer.into_inner().expect("Failed to get buffer");
+
+        // write the buffer back to the file
+        todofile.write_all(&buffer).expect("Failed to write buffer to file");
+
     }
 }
 
