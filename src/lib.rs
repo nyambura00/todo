@@ -282,42 +282,24 @@ impl Todo {
         }
 
         // Opens the TODO file with a permission to overwrite it
-        let mut todofile = OpenOptions::new()
+        let todofile = OpenOptions::new()
             .read(true)
             .write(true)
             .open(&self.todo_path)
             .expect("Couldn't open the todofile");
         
-        let buf_reader = BufReader::new(&todofile);
+        let mut buf_reader = BufReader::new(&todofile);
 
-        // a vec to hold the string todos
-        let mut buf_writer = BufWriter::new(Vec::new());
+        let mut buf_writer = BufWriter::new(&todofile);
 
         // the respective args
         let index_to_update = args[0].to_string().parse::<u64>().unwrap();
         let formatted_todo = args[1].to_string().parse::<String>().unwrap();
 
-        // a line to iterate over
-        let mut current_line = 0;
-
-        for line in buf_reader.lines() {
-
-            if current_line == index_to_update {
-                buf_writer.write(formatted_todo.as_bytes()).expect("Failed to write to buffer");
-                buf_writer.write(b"\n").expect("Failed to write to buffer");
-            } else {
-                buf_writer.write(line.expect("Failed to write to buffer").as_bytes()).expect("Failed to write to buffer");
-                buf_writer.write(b"\n").expect("Failed to write to buffer");
-            }
-
-            current_line += 1;
-
-        }
-
-        let buffer = buf_writer.into_inner().expect("Failed to get buffer");
-
-        // write the buffer back to the file
-        todofile.write_all(&buffer).expect("Failed to write buffer to file");
+        // iterate over todo reader
+        // capture the respective index
+        // update the respective content
+        // writer.flush().unwrap()
 
     }
 }
@@ -329,6 +311,9 @@ Available commands:
     - add [TASK/s]
         adds new task/s
         Example: todo add \"buy carrots\"
+    - edit [INDEX, formatted-string]
+        edits an existing todo string
+        Example: todo edit 2 \"finish rust book\"
     - list
         lists all tasks
         Example: todo list
