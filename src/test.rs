@@ -1,41 +1,39 @@
-use std::fs::OpenOptions;
-
 #[cfg(test)]
 mod tests {
-    use crate::Todo;
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
 
-    // for the edit function
     #[test]
-    fn right_args_number(&[args]: &[str]) {
-        assert_eq!(args.len(), 2);
+    fn test_edit_with_args() {
+        // create a dummy todo file to test against
+        let mut todo_file = File::create("todos.txt").unwrap();
+        todo_file.write_all(b"todo1\ntodo2\ntodo3").unwrap();
+
+        let todo_app = Todo {
+            todo_path: "todos.txt".to_string(),
+        };
+
+        let args = vec!["1".to_string(), "new_todo".to_string()];
+
+        todo_app.edit(&args);
+
+        // check if the file was edited correctly
+        let mut file = File::open("todos.txt").unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+        assert_eq!(contents, "todo2\ntodo3\nnew_todo");
     }
 
     #[test]
-    fn arg_one_type_usize(&[args]: [&str]) {
-        let index_arg: usize = args[0].to_string().parse::<usize>().unwrap();
-        assert!(typeof(index_arg), usize);
-    }
+    fn test_edit_without_args() {
+        let todo_app = Todo {
+            todo_path: "todos.txt".to_string(),
+        };
 
-    #[test]
-    fn arg_two_type_string() {
-        let formatted_todo: String = args[1].to_string().parse::<String>().unwrap();
-        assert!(typeof(formatted_todo), String);
-    }
+        let args = vec![];
 
-    #[test]
-    fn edit_fn_works(self, &[args]: [String]) {
-
-        // the respective args
-        let index_to_update = args[0].to_string().parse::<usize>().unwrap();
-        let formatted_todo = args[1].to_string().parse::<String>().unwrap();
-
-        
-    }
-
-    #[test]
-    fn respective_index_updated(self, &[args]: [String]) {
-        // the respective args
-        let index_to_update = args[0].to_string().parse::<usize>().unwrap();
-        let formatted_todo = args[1].to_string().parse::<String>().unwrap();
+        let result = std::panic::catch_unwind(|| todo_app.edit(&args));
+        assert!(result.is_err());
     }
 }
