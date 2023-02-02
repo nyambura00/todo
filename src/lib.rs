@@ -288,18 +288,36 @@ impl Todo {
             .open(&self.todo_path)
             .expect("Couldn't open the todofile");
         
-        let mut buf_reader = BufReader::new(&todofile);
+        let buf_reader = BufReader::new(&todofile);
 
         let mut buf_writer = BufWriter::new(&todofile);
 
         // the respective args
-        let index_to_update = args[0].to_string().parse::<u64>().unwrap();
-        let formatted_todo = args[1].to_string().parse::<String>().unwrap();
+        let index_to_update = args[0].to_string().parse::<usize>().unwrap();
+        let formatted_todo = args[1].as_str();
 
-        // iterate over todo reader
-        // capture the respective index
+        // a map to hold todos index, respective content to update
+        let mut buffer = String::new();
+
+        // iterate over the todo reader and place respective content in a buffer
+        for (index, line) in buf_reader.lines().enumerate() {
+            // filter the respective index
+            if index == index_to_update {
+                continue;
+            }
+
+            // the respective content being replaced
+            let line = line.unwrap();
+            
+            buffer = line.replace(&line, &formatted_todo);
+
+        };
+
         // update the respective content
-        // writer.flush().unwrap()
+        buf_writer.write(&buffer.as_bytes()).unwrap();
+
+        // reflect changes
+        buf_writer.flush().unwrap()
 
     }
 }
@@ -338,3 +356,6 @@ pub fn help() {
     // For readability
     println!("{}", TODO_HELP);
 }
+
+
+
